@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O Dilema do Presidente: Simulador de Priorização Social</title>
+  
+  <!-- Fontes do Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  
+  <!-- CSS Principal -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Bibliotecas externas via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- ================= TELA 1: INTRODUÇÃO / MENU ================= -->
+  <div id="intro-screen" class="screen active">
+    <div class="intro-container">
+      <div class="intro-badge">Simulador Científico e Educativo</div>
+      <h1 class="game-title">O DILEMA DO PRESIDENTE</h1>
+      <h2 class="game-subtitle">Simulador de Priorização Social com Inteligência Artificial</h2>
+      
+      <div class="intro-card glass">
+        <p class="intro-description">
+          Você foi eleito Presidente da República de uma nação repleta de potenciais, mas assolada por crises estruturais. Seu orçamento é **estritamente limitado** e seus ministros trarão dilemas complexos. Não existem escolhas perfeitas: beneficiar um setor significa desabrigar outro. Governe com sabedoria, priorize os recursos e enfrente os trade-offs da governabilidade.
+        </p>
+
+        <form id="setup-form" onsubmit="event.preventDefault(); startNewGame();">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="president-name">Nome do Presidente</label>
+              <input type="text" id="president-name" required placeholder="Ex: Silva" maxlength="15">
+            </div>
+            
+            <div class="form-group">
+              <label for="party-name">Nome do Partido</label>
+              <input type="text" id="party-name" required placeholder="Ex: Partido do Desenvolvimento (PD)" maxlength="30">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Perfil de Partida do País</label>
+            <div class="profile-cards">
+              <div class="profile-card selected" onclick="selectCountryProfile('balanced', this)">
+                <div class="profile-card-icon"><i data-lucide="scale"></i></div>
+                <h3>País em Desenvolvimento</h3>
+                <div class="profile-budget-badge">💰 Verba: $100B</div>
+                <p>Indicadores em <strong>50%</strong>. Equilíbrio entre recursos e demandas. Ponto de partida padrão.</p>
+              </div>
+              <div class="profile-card" onclick="selectCountryProfile('ecological', this)">
+                <div class="profile-card-icon"><i data-lucide="leaf"></i></div>
+                <div class="profile-budget-badge tight">💰 Verba: $70B (Apertada)</div>
+                <p>Meio Ambiente (<strong>80%</strong>) e Saúde (<strong>65%</strong>) em alta, mas Economia (<strong>30%</strong>) fragilizada.</p>
+              </div>
+              <div class="profile-card" onclick="selectCountryProfile('industrial', this)">
+                <div class="profile-card-icon"><i data-lucide="trending-up"></i></div>
+                <div class="profile-budget-badge rich">💰 Verba: $150B (Abundante)</div>
+                <p>Economia (<strong>80%</strong>) e Infraestrutura fortes, mas Meio Ambiente (<strong>25%</strong>) e Segurança vulneráveis.</p>
+              </div>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-large btn-glow">Iniciar Mandato</button>
+        </form>
+      </div>
+      
+      <div class="intro-footer">
+        Desenvolvido como um Sistema de Apoio à Decisão (DSS) para reflexão ética e governamental.
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TELA 2: GAMEPLAY (PALÁCIO E HUD) ================= -->
+  <div id="game-screen" class="screen">
+    <!-- Banner de Slogan / Objetivo Principal do Governo -->
+    <div class="presidential-banner">
+      <div class="banner-content">
+        <span class="banner-tagline">🏛️ VOCÊ É O PRESIDENTE. O PAÍS ESTÁ EM SUAS MÃOS. SUAS DECISÕES POSSUEM CONSEQUÊNCIAS.</span>
+        <span id="hud-goal-text" class="banner-goal">🎯 OBJETIVO ATUAL: Converse com os Ministros e resolva os dilemas da nação.</span>
+      </div>
+      <button class="btn btn-help-sm" onclick="showTutorialModal()" title="Como Jogar"><i data-lucide="help-circle"></i> Ajuda</button>
+    </div>
+
+    <header class="game-header">
+      <div class="header-left">
+        <div class="avatar-circle">P</div>
+        <div>
+          <h2 id="hud-pres-name">Presidente Silva</h2>
+          <p id="hud-party-name">Partido do Desenvolvimento</p>
+        </div>
+      </div>
+      
+      <div class="header-center">
+        <div class="budget-hud glass">
+          <div class="budget-hud-inner">
+            <span class="budget-label"><i data-lucide="wallet"></i> VERBA DISPONÍVEL</span>
+            <span id="hud-budget" class="budget-value">$100B</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <div class="round-hud glass">
+          <span class="round-label"><i data-lucide="calendar"></i> MANDATO</span>
+          <span id="hud-round" class="round-value">Ano 1 / 3</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="game-layout">
+      <!-- Lado Esquerdo: Área de Jogo (Canvas), Missão Atual e Caixa de Diálogo -->
+      <main class="game-main-area">
+
+        <!-- Card de Missão Atual -->
+        <div id="mission-card" class="mission-card glass">
+          <div class="mission-header">
+            <h3><i data-lucide="check-square"></i> MISSÃO ATUAL</h3>
+            <span id="mission-status-tag" class="mission-status-tag">Em Progresso</span>
+          </div>
+          <div class="mission-body">
+            <h4 id="mission-title">Falar com os Ministros no Palácio</h4>
+            <p id="mission-desc">Visite as salas dos ministros e despache os assuntos prioritários deste ano fiscal.</p>
+            <div id="mission-checklist" class="mission-checklist">
+              <div class="check-item" id="check-step-1"><span class="check-icon">○</span> Falar com o Ministro</div>
+              <div class="check-item" id="check-step-2"><span class="check-icon">○</span> Avaliar impactos das opções</div>
+              <div class="check-item" id="check-step-3"><span class="check-icon">○</span> Confirmar a decisão</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Área do Canvas 2D -->
+        <div id="canvas-container" class="canvas-container glass">
+          <div class="canvas-top-bar">
+            <span class="status-indicator-dot online"></span>
+            <span id="canvas-room-name">Palácio do Planalto - Gabinete Central</span>
+          </div>
+          
+          <!-- Elemento Canvas do Jogo 2D -->
+          <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+          <!-- Barra Fixa de Instruções de Movimentação -->
+          <div class="controls-card-bar">
+            <span class="controls-label"><i data-lucide="gamepad-2"></i> MOVIMENTAÇÃO:</span>
+            <span><strong>WASD / Setas</strong> → Mover</span>
+            <span class="divider">|</span>
+            <span><strong>ESPAÇO / E</strong> → Interagir</span>
+          </div>
+        </div>
+
+        <!-- Caixa de Diálogo RPG -->
+        <div id="dialog-box" class="dialog-box glass hidden">
+          <div class="dialog-avatar-container">
+            <canvas id="dialogAvatarCanvas" width="80" height="80"></canvas>
+          </div>
+          <div class="dialog-content">
+            <h3 id="dialog-speaker-name">Ministra da Saúde</h3>
+            <h4 id="dialog-speaker-role">Dra. Helena Carvalho</h4>
+            <div id="dialog-text" class="dialog-text">O texto da crise vai aparecer digitado aqui...</div>
+            
+            <!-- Opções de Decisão -->
+            <div id="dialog-options" class="dialog-options">
+              <!-- Inseridas dinamicamente via JS -->
+            </div>
+            
+            <button id="dialog-close-btn" class="btn btn-secondary hidden" onclick="closeDialog()">Fechar</button>
+          </div>
+        </div>
+      </main>
+
+      <!-- Lado Direito: Dashboard de Indicadores e Feed de Comunicações -->
+      <aside class="game-sidebar">
+        <!-- Assistente de IA Presidencial -->
+        <div class="sidebar-section glass ia-assistant-section">
+          <h3><i data-lucide="bot"></i> Assistente de IA Presidencial</h3>
+          <div id="ia-assistant-card" class="ia-assistant-card">
+            <div id="ia-status-badge" class="ia-status-badge">ONLINE</div>
+            <div id="ia-assistant-content" class="ia-assistant-content">
+              🤖 <strong>[ASSISTENTE PRESIDENCIAL]</strong><br>
+              Sistemas ativos. Passe o mouse sobre as decisões para simular o impacto.
+            </div>
+          </div>
+        </div>
+
+        <!-- Indicadores de Estado do País -->
+        <div class="sidebar-section glass">
+          <div class="sidebar-header-with-hint">
+            <h3><i data-lucide="activity"></i> STATUS DO PAÍS</h3>
+            <p class="section-hint">Quanto maior o indicador, melhor está esta área do país.</p>
+          </div>
+          <div class="indicators-grid">
+            <!-- Economia -->
+            <div class="indicator-row">
+              <div class="indicator-meta">
+                <span class="indicator-name"><i data-lucide="trending-up"></i> Economia</span>
+                <div class="indicator-val-group">
+                  <span id="stat-tag-economia" class="status-tag good">🟢 BOM</span>
+                  <span id="stat-val-economia" class="indicator-pct">50%</span>
+                </div>
+              </div>
+              <div class="progress-bar-bg">
+                <div id="stat-bar-economia" class="progress-bar-fill economy" style="width: 50%;"></div>
+              </div>
+            </div>
+            
+            <!-- Saúde -->
+            <div class="indicator-row">
+              <div class="indicator-meta">
+                <span class="indicator-name"><i data-lucide="heart"></i> Saúde</span>
+                <div class="indicator-val-group">
+                  <span id="stat-tag-saude" class="status-tag warning">🟡 ATENÇÃO</span>
+                  <span id="stat-val-saude" class="indicator-pct">50%</span>
+                </div>
+              </div>
+              <div class="progress-bar-bg">
+                <div id="stat-bar-saude" class="progress-bar-fill health" style="width: 50%;"></div>
+              </div>
+            </div>
+
+            <!-- Educação -->
+            <div class="indicator-row">
+              <div class="indicator-meta">
+                <span class="indicator-name"><i data-lucide="book-open"></i> Educação</span>
+                <div class="indicator-val-group">
+                  <span id="stat-tag-educacao" class="status-tag warning">🟡 ATENÇÃO</span>
+                  <span id="stat-val-educacao" class="indicator-pct">50%</span>
+                </div>
+              </div>
+              <div class="progress-bar-bg">
+                <div id="stat-bar-educacao" class="progress-bar-fill education" style="width: 50%;"></div>
+              </div>
+            </div>
+
+            <!-- Segurança -->
+            <div class="indicator-row">
+              <div class="indicator-meta">
+                <span class="indicator-name"><i data-lucide="shield"></i> Segurança</span>
+                <div class="indicator-val-group">
+                  <span id="stat-tag-seguranca" class="status-tag warning">🟡 ATENÇÃO</span>
+                  <span id="stat-val-seguranca" class="indicator-pct">50%</span>
+                </div>
+              </div>
+              <div class="progress-bar-bg">
+                <div id="stat-bar-seguranca" class="progress-bar-fill security" style="width: 50%;"></div>
+              </div>
+            </div>
+
+            <!-- Meio Ambiente -->
+            <div class="indicator-row">
+              <div class="indicator-meta">
+                <span class="indicator-name"><i data-lucide="leaf"></i> Meio Ambiente</span>
+                <div class="indicator-val-group">
+                  <span id="stat-tag-meioambiente" class="status-tag good">🟢 BOM</span>
+                  <span id="stat-val-meioambiente" class="indicator-pct">50%</span>
+                </div>
+              </div>
+              <div class="progress-bar-bg">
+                <div id="stat-bar-meioambiente" class="progress-bar-fill environment" style="width: 50%;"></div>
+              </div>
+            </div>
+
+            <!-- Infraestrutura -->
+            <div class="indicator-row">
+              <div class="indicator-meta">
+                <span class="indicator-name"><i data-lucide="database"></i> Infraestrutura</span>
+                <div class="indicator-val-group">
+                  <span id="stat-tag-infraestrutura" class="status-tag warning">🟡 ATENÇÃO</span>
+                  <span id="stat-val-infraestrutura" class="indicator-pct">50%</span>
+                </div>
+              </div>
+              <div class="progress-bar-bg">
+                <div id="stat-bar-infraestrutura" class="progress-bar-fill infrastructure" style="width: 50%;"></div>
+              </div>
+            </div>
+
+            <!-- Aprovação Popular -->
+            <div class="indicator-row popular-row">
+              <div class="indicator-meta">
+                <span class="indicator-name"><i data-lucide="users"></i> Aprovação Popular</span>
+                <div class="indicator-val-group">
+                  <span id="stat-tag-satisfacao" class="status-tag good">🟢 BOM</span>
+                  <span id="stat-val-satisfacao" class="indicator-pct">50%</span>
+                </div>
+              </div>
+              <div class="progress-bar-bg">
+                <div id="stat-bar-satisfacao" class="progress-bar-fill popularity" style="width: 50%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feed de Comunicações em Tempo Real -->
+        <div class="sidebar-section glass feed-section">
+          <h3><i data-lucide="message-square"></i> Feed do Gabinete de Crise</h3>
+          <div id="reactions-feed" class="reactions-feed">
+            <div class="feed-placeholder">
+              <i data-lucide="radio" class="pulse"></i>
+              <p>Aguardando ações presidenciais... Fale com os ministros no Palácio para tomar decisões.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ================= TELA 3: RELATÓRIO FINAL / ANÁLISE DE IA ================= -->
+  <div id="report-screen" class="screen">
+    <div class="report-container">
+      <div class="report-header">
+        <div class="badge-ia"><i data-lucide="cpu"></i> Análise de Inteligência Artificial</div>
+        <h1 class="report-title">RELATÓRIO DE GOVERNANÇA</h1>
+        <p class="report-subtitle">Avaliação Crítica e Científica de Priorização Social</p>
+      </div>
+
+      <div class="report-layout">
+        <!-- Gráfico e Perfil Dominante (Esquerda) -->
+        <div class="report-left">
+          <!-- Card de Perfil Dominante -->
+          <div class="profile-result-card glass" id="profile-result-box">
+            <div class="result-icon-circle" id="result-profile-icon"><i data-lucide="scale"></i></div>
+            <span class="result-label">SEU PERFIL DOMINANTE</span>
+            <h2 id="result-profile-name">Equilíbrio Estratégico</h2>
+            <h3 id="result-profile-sub">O Articulador Moderado</h3>
+          </div>
+
+          <!-- Radar Chart do Perfil -->
+          <div class="chart-card glass">
+            <h3>Gráfico de Alinhamento de Governança</h3>
+            <div class="chart-container">
+              <canvas id="radarChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Relatório Textual da IA (Direita) -->
+        <div class="report-right glass">
+          <!-- Conteúdo do Relatório Gerado -->
+          <div class="report-content-wrapper">
+            <div id="report-text" class="report-text-content">
+              <!-- Inserido dinamicamente -->
+            </div>
+          </div>
+
+          <!-- Ações Finais Arcade -->
+          <div class="report-actions arcade-actions">
+            <button class="btn btn-primary btn-large btn-glow btn-full" onclick="restartGame()">
+              🔄 JOGAR NOVAMENTE / PRÓXIMO JOGADOR
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ANIMAÇÃO 2D DE CONSEQUÊNCIAS ================= -->
+  <div id="consequence-modal" class="modal-overlay hidden">
+    <div class="modal-card glass">
+      <div class="modal-header">
+        <div id="consequence-badge" class="consequence-badge outcome-good">
+          <i data-lucide="sparkles"></i> CONSEQUÊNCIA POSITIVA
+        </div>
+        <h2 id="consequence-title">Avanço e Progresso Social!</h2>
+        
+        <!-- Linha do Tempo das 3 Cenas -->
+        <div id="scene-timeline" class="scene-timeline">
+          <div class="timeline-step active"><span>1</span> Anúncio</div>
+          <div class="timeline-line"></div>
+          <div class="timeline-step"><span>2</span> Cidade</div>
+          <div class="timeline-line"></div>
+          <div class="timeline-step"><span>3</span> Cidadãos</div>
+        </div>
+      </div>
+
+      <!-- Canvas de Cutscene 2D Pixel Art -->
+      <div class="consequence-canvas-wrapper">
+        <canvas id="consequenceCanvas" width="768" height="432"></canvas>
+      </div>
+
+      <!-- Legenda Dinâmica da Cena -->
+      <div class="scene-caption-container">
+        <i data-lucide="film"></i>
+        <span id="scene-caption">CENA 1/3: O Anúncio da Medida Presidencial...</span>
+      </div>
+
+      <!-- Variação dos Indicadores do País -->
+      <div id="consequence-stats-list" class="consequence-stats-grid">
+        <!-- Pílulas de Estatísticas dinâmicas -->
+      </div>
+
+      <!-- Narrativa da Consequência -->
+      <div class="consequence-text-box">
+        <p id="consequence-desc">Descrição do impacto no país...</p>
+      </div>
+
+      <!-- Rodapé com Navegação das Cenas e Botão de Ação -->
+      <div class="modal-footer scene-controls">
+        <button id="btn-prev-scene" class="btn btn-secondary" disabled>
+          <i data-lucide="chevron-left"></i> Cena Anterior
+        </button>
+
+        <button id="consequence-close-btn" class="btn btn-primary btn-large btn-glow">
+          Continuar Mandato <i data-lucide="arrow-right"></i>
+        </button>
+
+        <button id="btn-next-scene" class="btn btn-secondary">
+          Próxima Cena <i data-lucide="chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL DE TUTORIAL INICIAL (COMO JOGAR) ================= -->
+  <div id="tutorial-modal" class="modal-overlay hidden">
+    <div class="tutorial-card glass">
+      <div class="tutorial-header">
+        <h2><i data-lucide="gamepad-2"></i> COMO JOGAR</h2>
+        <span class="tutorial-subtitle">Guia Rápido de Governança e Controles</span>
+      </div>
+      <div class="tutorial-body">
+        <div class="tutorial-step">
+          <div class="step-num">1</div>
+          <p><strong>Movimente-se pelo Palácio:</strong> Use as teclas <strong>WASD</strong> ou as <strong>Setas direcionais</strong> para caminhar com o Presidente.</p>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-num">2</div>
+          <p><strong>Aproxime-se dos Ministros:</strong> Os Ministros possuem um ponto de exclamação (<strong>!</strong>) indicando crises pendentes no mandato.</p>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-num">3</div>
+          <p><strong>Converse e Interaja:</strong> Pressione <strong>ESPAÇO</strong> ou a tecla <strong>E</strong> para abrir o despacho com o Ministro.</p>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-num">4</div>
+          <p><strong>Leia a Crise:</strong> Entenda o dilema apresentado em linguagem simples e analise as propostas de solução.</p>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-num">5</div>
+          <p><strong>Simulação da IA:</strong> Passe o mouse sobre as opções para que o <strong>Assistente de IA Presidencial</strong> simule o impacto exato.</p>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-num">6</div>
+          <p><strong>Gerencie seu Orçamento:</strong> Verifique se possui verba suficiente no Tesouro antes de confirmar a decisão.</p>
+        </div>
+        <div class="tutorial-step">
+          <div class="step-num">7</div>
+          <p><strong>Complete o Mandato:</strong> Resolva as crises dos setores e equilibre a saúde, economia, segurança e educação durante os 3 anos!</p>
+        </div>
+      </div>
+      <div class="tutorial-footer">
+        <button class="btn btn-primary btn-large btn-glow" onclick="closeTutorialModal()">
+          🚀 ENTENDI, COMEÇAR JOGO!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carregamento dos scripts -->
+  <script src="crises.js"></script>
+  <script src="ai-engine.js"></script>
+  <script src="consequence-animator.js"></script>
+  <script src="app.js"></script>
+  
+  <script>
+    // Inicializar ícones do Lucide no carregamento inicial
+    lucide.createIcons();
+  </script>
+</body>
+</html>
