@@ -1,0 +1,145 @@
+[gd_scene load_steps=2 format=3 uid="uid://c88presidential_office_scene"]
+
+[ext_resource type="Script" path="res://GabinetePresidente.gd" id="1_script"]
+
+[node name="GabinetePresidente" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 15
+
+[node name="Header" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="LabelTesouro" type="Label" parent="VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Tesouro Nacional: R$ 1000.00"
+horizontal_alignment = 0
+
+[node name="LabelAprovacao" type="Label" parent="VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Aprovação Popular: 50.0%"
+horizontal_alignment = 2
+
+[node name="StatsGrid" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EconomiaBox" type="VBoxContainer" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="VBoxContainer/StatsGrid/EconomiaBox"]
+layout_mode = 2
+text = "Economia"
+horizontal_alignment = 1
+
+[node name="Value" type="Label" parent="VBoxContainer/StatsGrid/EconomiaBox"]
+layout_mode = 2
+text = "Economia: 50.0%"
+horizontal_alignment = 1
+
+[node name="SaudeBox" type="VBoxContainer" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="VBoxContainer/StatsGrid/SaudeBox"]
+layout_mode = 2
+text = "Saúde"
+horizontal_alignment = 1
+
+[node name="Value" type="Label" parent="VBoxContainer/StatsGrid/SaudeBox"]
+layout_mode = 2
+text = "Saúde: 50.0%"
+horizontal_alignment = 1
+
+[node name="EducacaoBox" type="VBoxContainer" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="VBoxContainer/StatsGrid/EducacaoBox"]
+layout_mode = 2
+text = "Educação"
+horizontal_alignment = 1
+
+[node name="Value" type="Label" parent="VBoxContainer/StatsGrid/EducacaoBox"]
+layout_mode = 2
+text = "Educação: 50.0%"
+horizontal_alignment = 1
+
+[node name="SegurancaBox" type="VBoxContainer" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="VBoxContainer/StatsGrid/SegurancaBox"]
+layout_mode = 2
+text = "Segurança"
+horizontal_alignment = 1
+
+[node name="Value" type="Label" parent="VBoxContainer/StatsGrid/SegurancaBox"]
+layout_mode = 2
+text = "Segurança: 50.0%"
+horizontal_alignment = 1
+
+[node name="IaPanel" type="PanelContainer" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="JanelaTextoIA" type="RichTextLabel" parent="VBoxContainer/IaPanel"]
+layout_mode = 2
+bbcode_enabled = true
+text = "🤖 [ASSISTENTE VIRTUAL DA PRESIDÊNCIA]
+Aguardando análise inicial..."
+
+[node name="ActionsGrid" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="BtnSaude" type="Button" parent="VBoxContainer/ActionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Saúde (-150 / +20)"
+
+[node name="BtnEducacao" type="Button" parent="VBoxContainer/ActionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Educação (-120 / +18)"
+
+[node name="BtnEconomia" type="Button" parent="VBoxContainer/ActionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Economia (-200 / +25)"
+
+[node name="BtnSeguranca" type="Button" parent="VBoxContainer/ActionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Segurança (-100 / +15)"
+
+[node name="Footer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="BtnFimTurno" type="Button" parent="VBoxContainer/Footer"]
+custom_minimum_size = Vector2(250, 40)
+layout_mode = 2
+text = "Avançar Turno ➔"
